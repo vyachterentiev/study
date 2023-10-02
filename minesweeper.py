@@ -96,6 +96,8 @@ class Sentence():
     def __init__(self, cells, count):
         self.cells = set(cells)
         self.count = count
+        self.mines = set()
+        self.saves = set()
 
     def __eq__(self, other):
         return self.cells == other.cells and self.count == other.count
@@ -104,18 +106,24 @@ class Sentence():
         return f"{self.cells} = {self.count}"
 
     def known_mines(self):
-        
-
         """
         Returns the set of all cells in self.cells known to be mines.
         """
-        
+        for cell in self.cells:
+            if cell in KNOWN_MINES:
+                self.mines.add(cell)
+
+        return (self.mines)
         raise NotImplementedError
 
     def known_safes(self):
         """
         Returns the set of all cells in self.cells known to be safe.
         """
+        for cell in self.cells:
+            if cell in KNOWN_SAVES:
+                self.saves.add(cell)
+        return (self.saves)
 
         raise NotImplementedError
 
@@ -124,6 +132,14 @@ class Sentence():
         Updates internal knowledge representation given the fact that
         a cell is known to be a mine.
         """
+        try:
+            self.cells.remove(cell)
+        except:
+            return None
+        else:
+            self.count-=1
+
+
         #raise NotImplementedError
 
     def mark_safe(self, cell):
@@ -131,15 +147,13 @@ class Sentence():
         Updates internal knowledge representation given the fact that
         a cell is known to be safe.
         """
-        self.saves.add(cell)
+        try:
+            self.cells.remove(cell)
+        except:
+            return None
+
 
         #raise NotImplementedError
-
-game0 = Minesweeper()
-
-test_sn = Sentence(((0,1),(1,1),(1,0)),1)
-
-
 
 
 
@@ -197,6 +211,26 @@ class MinesweeperAI():
             5) add any new sentences to the AI's knowledge base
                if they can be inferred from existing knowledge
         """
+        self.moves_made.add(cell)
+
+        self.mark_safe(cell)
+
+        cells = set()
+        for i in range(cell[0]-1,cell[0]+2):
+            for j in range(cell[1]-1,cell[1]+2):
+                if (i,j) != cell:
+                    if ((i,j) not in self.safes):
+                        if (i,j) in KNOWN_MINES:
+                            count -= 1
+                        else:
+                            cells.add((i,j))
+
+        self.knowledge.append(Sentence(cells, count))
+
+        return None
+
+
+
         raise NotImplementedError
 
     def make_safe_move(self):
