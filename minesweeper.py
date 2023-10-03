@@ -228,31 +228,45 @@ class MinesweeperAI():
         #create new sentence
         new_sentence = Sentence(cells, count)
         
-        self.knowledge.append(new_sentence)
+        def Sentance_treatment(sntnce):
+            self.knowledge.append(sntnce)
 
-        #create a deep copy of cells we will be iterating over
-        new_safes = copy.deepcopy(new_sentence.known_safes())
-        new_mines = copy.deepcopy(new_sentence.known_mines())
+            #create a deep copy of cells we will be iterating over
+            new_safes = copy.deepcopy(sntnce.known_safes())
+            new_mines = copy.deepcopy(sntnce.known_mines())
 
-        #check for safes and mines in KB
-        if new_safes:
-            for known_safe in new_safes:
-                self.mark_safe(known_safe)
+            #check for safes and mines in KB
+            if new_safes:
+                for known_safe in new_safes:
+                    self.mark_safe(known_safe)
 
-        if new_mines:
-            for known_mine in new_mines:
-                self.mark_mine(known_mine)
+            if new_mines:
+                for known_mine in new_mines:
+                    self.mark_mine(known_mine)
 
-        #check for empty sentences in the KB
-        for sentence in self.knowledge:
-            if len(sentence.cells) == 0:
-                self.knowledge.remove(sentence)
+            #check for empty sentences in the KB
+            for sentence in self.knowledge:
+                if len(sentence.cells) == 0:
+                    self.knowledge.remove(sentence)
 
-        #check if we can collide any sentences
-#        for sentence_small in self.knowledge:
-#            for sentence_big in self.knowledge:
- #               if (sentence_small!=sentence_big) and sentence_small.issubset(sentence_big):
-                    
+            #check if we can collide any sentences and clean KB of identical sentences
+            for sentence_small in self.knowledge:
+                for sentence_big in self.knowledge:
+                    if (sentence_small!=sentence_big) and sentence_small.cells.issubset(sentence_big.cells):
+                        big_cells = copy.deepcopy(sentence_big.cells)
+                        small_cells = copy.deepcopy(sentence_small.cells)
+                        newest_sentence = Sentence((big_cells - small_cells), (sentence_big.count - sentence_small.count))
+                        check = 0
+                        for sentence in self.knowledge:
+                            if sentence == newest_sentence:
+                                check+=1
+
+                        if check > 0:
+                            break
+                        else:
+                            Sentance_treatment(newest_sentence)
+       
+        Sentance_treatment(new_sentence)
 
         return None
 
@@ -269,6 +283,11 @@ class MinesweeperAI():
         This function may use the knowledge in self.mines, self.safes
         and self.moves_made, but should not modify any of those values.
         """
+        for killer_move in self.safes:
+            if killer_move not in self.moves_made:
+                return killer_move
+        return None
+
         raise NotImplementedError
 
     def make_random_move(self):
@@ -278,13 +297,21 @@ class MinesweeperAI():
             1) have not already been chosen, and
             2) are not known to be mines
         """
+
+        for i in range(0,self.width-1):
+            for j in range(0, self.height-1):
+                if ((i,j) not in self.moves_made) and ((i,j) not in self.mines):
+                    return ((i,j))
+        
+        return None
+
         raise NotImplementedError
     
-ai = MinesweeperAI()
+#ai = MinesweeperAI()
 
-ai.add_knowledge((0,0), 3)
-ai.add_knowledge((2,0),3)
-ai.add_knowledge((2,1),3)
+#ai.add_knowledge((0,0), 3)
+#ai.add_knowledge((2,0),3)
+#ai.add_knowledge((2,1),3)
 
 
 
