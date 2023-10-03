@@ -1,8 +1,5 @@
 import itertools
-import random
-
-KNOWN_MINES = set()
-KNOWN_SAVES = set()
+import random, copy
 
 class Minesweeper():
     """
@@ -109,21 +106,21 @@ class Sentence():
         """
         Returns the set of all cells in self.cells known to be mines.
         """
-        for cell in self.cells:
-            if cell in KNOWN_MINES:
-                self.mines.add(cell)
-
-        return (self.mines)
+        if self.count == len(self.cells):
+            return(self.cells)
+        else:
+            return None
+        
         raise NotImplementedError
 
     def known_safes(self):
         """
         Returns the set of all cells in self.cells known to be safe.
         """
-        for cell in self.cells:
-            if cell in KNOWN_SAVES:
-                self.saves.add(cell)
-        return (self.saves)
+        if self.count == 0:
+            return(self.cells)
+        else:
+            return None
 
         raise NotImplementedError
 
@@ -138,6 +135,7 @@ class Sentence():
             return None
         else:
             self.count-=1
+
 
 
         #raise NotImplementedError
@@ -211,21 +209,50 @@ class MinesweeperAI():
             5) add any new sentences to the AI's knowledge base
                if they can be inferred from existing knowledge
         """
+        # 1) mark the cell as a move that has been made
         self.moves_made.add(cell)
-
+        # 2) mark the cell as safe
         self.mark_safe(cell)
 
+        # create a set of cells around the Cell
         cells = set()
         for i in range(cell[0]-1,cell[0]+2):
             for j in range(cell[1]-1,cell[1]+2):
-                if (i,j) != cell:
+                if (i,j) != cell and i in range(0,self.height) and j in range (0,self.width):
                     if ((i,j) not in self.safes):
-                        if (i,j) in KNOWN_MINES:
+                        if (i,j) in self.mines:
                             count -= 1
                         else:
                             cells.add((i,j))
 
-        self.knowledge.append(Sentence(cells, count))
+        #create new sentence
+        new_sentence = Sentence(cells, count)
+        
+        self.knowledge.append(new_sentence)
+
+        #create a deep copy of cells we will be iterating over
+        new_safes = copy.deepcopy(new_sentence.known_safes())
+        new_mines = copy.deepcopy(new_sentence.known_mines())
+
+        #check for safes and mines in KB
+        if new_safes:
+            for known_safe in new_safes:
+                self.mark_safe(known_safe)
+
+        if new_mines:
+            for known_mine in new_mines:
+                self.mark_mine(known_mine)
+
+        #check for empty sentences in the KB
+        for sentence in self.knowledge:
+            if len(sentence.cells) == 0:
+                self.knowledge.remove(sentence)
+
+        #check if we can collide any sentences
+#        for sentence_small in self.knowledge:
+#            for sentence_big in self.knowledge:
+ #               if (sentence_small!=sentence_big) and sentence_small.issubset(sentence_big):
+                    
 
         return None
 
@@ -252,3 +279,12 @@ class MinesweeperAI():
             2) are not known to be mines
         """
         raise NotImplementedError
+    
+ai = MinesweeperAI()
+
+ai.add_knowledge((0,0), 3)
+ai.add_knowledge((2,0),3)
+ai.add_knowledge((2,1),3)
+
+
+
